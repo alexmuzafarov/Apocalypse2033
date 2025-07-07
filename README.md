@@ -1,5 +1,15 @@
-## Apocalypse 2033 Site
+# Apocalypse 2033 Website
 
-To edit content, update the files in `content/en/` and `content/ru/`.
+## How to Use
 
-To deploy, import into Vercel or run locally with `npm install && npm run dev`.
+- English content is in `content/en/`
+- Russian content is in `content/ru/`
+- Edit or add `.md` files in the appropriate folder.
+- Pages are in `pages/` for each language.
+
+## To Deploy on Vercel
+
+1. Push this folder to GitHub
+2. Go to https://vercel.com/import/git
+3. Connect your GitHub, choose the repo
+4. Click "Deploy" and your site is live!
