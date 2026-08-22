@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang=""en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Book Website</title>
+    <link rel="stylesheet" type="text/css" href="../CSS/style.css">
+    <link rel="icon" type="image/jpg" href="../images/logo.jpg">
+    <script src="scripts/book.js" defer></script>
+</head>
+
+<body>
+    <header>
+        <div>
+            <img src="../images/logo.jpg" width="30" height="30" alt="logo">
+                <form action="/search-results" method="GET" role="search">
+                    <input class="search-bar" type="search" id="site-search" name="q" placeholder="Search...">
+                    <button class="header-button" type="submit">Search</button> 
+                </form>
+        </div>
+        <nav>
+            <button class="header-button"><a href="#">Home</a></button>
+            <button class="header-button"><a href="#">Pricing</a></button>
+            <button class="header-button"><a href="#">Contact Us</a></button>
+            <button class="single-button">Beans</button>
+            <button class="all-button">Beans</button>
+        </nav>
+    </header>
+    
+    <nav class="book-subheader">
+        <div class="info-box"><img src="../images/book.jpg" width="100" height="100" alt="logo"></div>
+        <div class="info-box book-info">
+            <div class="book-name">The Bible</div>
+            <div class="book-description">A book about God</div>
+            <div class="book-edition">Ninth Edition</div>
+        </div>
+        <div class="info-box isbn-info">
+            <div>ISBN 10: 0123456789</div>
+            <div>ISBN 13: 0000123456789</div>
+        </div>
+        <div class="info-box price-info">
+            <div class="price">$50.00</div>
+            <button class="purchase-button">Purchase</button>
+        </div>
+        <div class="info-box author-box">
+            <img src="../images/logo.jpg" width="50" height="50" alt="logo">
+            <div class="author-info">
+                <div class="author-name">Alex Mus</div>
+                <div class="author-title">Author and President</div>
+            </div>
+        </div>
+    </nav>
+    
+    
+    
+    
+<main class="reader-layout">
+
+    <aside class="side-panel"></aside>
+
+    <section class="book-card">
+        <select class="chapter-select">Loading...</select>
+
+        <div class="page-content">
+            Loading...
+        </div>
+
+        <div class="page-number">
+            1
+        </div>
+    </section>
+
+    <aside class="side-panel"></aside>
+
+</main>
+
+    <div class="page-controls">
+        <button id="previous-page">◀</button>
+
+        <div id="page-buttons"></div>
+
+        <button id="next-page">▶</button>
+    </div>
+
+<section class="contact">
+    <h2>Contact</h2>
+
+    <form>
+        <input 
+            type="text" 
+            name="name" 
+            placeholder="Name" 
+            required
+        >
+
+        <input 
+            type="email" 
+            name="email" 
+            placeholder="Email" 
+            required
+        >
+
+        <textarea 
+            name="message" 
+            placeholder="Message" 
+            rows="3" 
+            required
+        ></textarea>
+
+        <button type="submit">
+            Send
+        </button>
+    </form>
+</section>
+
+</body>
+
+<footer class="footer">
+  <p class="footer__title">GitHub Pages</p>
+  <p>© 2026 All rights reserved</p>
+</footer>
+
+</html>
