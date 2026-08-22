@@ -1,0 +1,175 @@
+{
+  "Alex Book": {
+    "chapters": [
+      {
+        "id": 1,
+        "title": "Chapter 1: Introduction",
+        "link": "",
+        "pages": [
+          {
+            "page-number": 1,
+            "content": [
+              "(~ 5 Minutes) Brainstorm project ideas for your skill level:",
+              "(~ 45 Minutes) Attempt to get this project started:",
+              "(~ 10 Minutes) Reflect on how it went:"
+            ]
+          },
+          {
+            "page-number": 2,
+            "content": [
+              "Continue planning your project:",
+              "Define your goals:"
+            ]
+          },
+          {
+            "page-number": 3,
+            "content": [
+              "Review your project idea:",
+              "Make any necessary changes before continuing:"
+            ]
+          }
+        ]
+      },
+      {
+        "id": 2,
+        "title": "Chapter 2: Challenges",
+        "link": "",
+        "pages": [
+          {
+            "page-number": 4,
+            "content": [
+              "Challenge One:",
+              "Complete the first challenge."
+            ]
+          },
+          {
+            "page-number": 5,
+            "content": [
+              "Challenge Two:",
+              "Complete the second challenge."
+            ]
+          },
+          {
+            "page-number": 6,
+            "content": [
+              "Challenge Three:",
+              "Complete the third challenge."
+            ]
+          }
+        ]
+      },
+      {
+        "id": 3,
+        "title": "Chapter 3: Planning",
+        "link": "",
+        "pages": [
+          {
+            "page-number": 7,
+            "content": [
+              "Planning Exercise One:",
+              "Begin planning the next stage of your project."
+            ]
+          },
+          {
+            "page-number": 8,
+            "content": [
+              "Planning Exercise Two:",
+              "Review your current plan and identify improvements."
+            ]
+          },
+          {
+            "page-number": 9,
+            "content": [
+              "Planning Exercise Three:",
+              "Finalize your plan before moving forward."
+            ]
+          }
+        ]
+      },
+      {
+        "id": 4,
+        "title": "Chapter 4: Development",
+        "link": "",
+        "pages": [
+          {
+            "page-number": 10,
+            "content": [
+              "Development Exercise One:",
+              "Begin working on the main part of your project."
+            ]
+          },
+          {
+            "page-number": 11,
+            "content": [
+              "Development Exercise Two:",
+              "Continue developing your project and solve any problems."
+            ]
+          },
+          {
+            "page-number": 12,
+            "content": [
+              "Development Exercise Three:",
+              "Review the progress you have made so far."
+            ]
+          }
+        ]
+      },
+      {
+        "id": 5,
+        "title": "Chapter 5: Testing",
+        "link": "",
+        "pages": [
+          {
+            "page-number": 13,
+            "content": [
+              "Testing Exercise One:",
+              "Test the main features of your project."
+            ]
+          },
+          {
+            "page-number": 14,
+            "content": [
+              "Testing Exercise Two:",
+              "Identify and fix problems found during testing."
+            ]
+          },
+          {
+            "page-number": 15,
+            "content": [
+              "Testing Exercise Three:",
+              "Perform a final review of your project."
+            ]
+          }
+        ]
+      },
+      {
+        "id": 6,
+        "title": "Chapter 6: Reflection",
+        "link": "",
+        "pages": [
+          {
+            "page-number": 16,
+            "content": [
+              "Reflection One:",
+              "Think about what you learned from this project."
+            ]
+          },
+          {
+            "page-number": 17,
+            "content": [
+              "Reflection Two:",
+              "Write down what went well and what could be improved."
+            ]
+          },
+          {
+            "page-number": 18,
+            "content": [
+              "Reflection Three:",
+              "Summarize your overall experience with the project."
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}
