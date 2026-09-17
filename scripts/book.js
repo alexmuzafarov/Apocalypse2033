@@ -235,18 +235,25 @@ async function renderPage(
         scale
     });
 
-    canvas.width = viewport.width;
-    canvas.height = viewport.height;
+    const outputScale = window.devicePixelRatio || 1;
+
+    canvas.width = Math.floor(viewport.width * outputScale);
+    canvas.height = Math.floor(viewport.height * outputScale);
 
     canvas.style.width = `${viewport.width}px`;
     canvas.style.height = `${viewport.height}px`;
 
     pageWrapper.appendChild(canvas);
 
-    await page.render({
+    const renderContext = {
         canvasContext: context,
-        viewport: viewport
-    }).promise;
+        viewport: viewport,
+        transform: outputScale !== 1
+            ? [outputScale, 0, 0, outputScale, 0, 0]
+            : null
+    };
+
+    await page.render(renderContext).promise;
 
     // Make sure this render is still current
     if (session !== renderSession) {
