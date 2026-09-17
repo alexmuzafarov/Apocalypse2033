@@ -1,148 +1,360 @@
-let bookData;
-let currentChapter = 0;
-let currentPage = 0;
+import * as pdfjsLib from "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.min.mjs";
 
-const chapterSelect = document.querySelector(".chapter-select");
-const pageContent = document.querySelector(".page-content");
-const pageNumber = document.querySelector(".page-number");
+pdfjsLib.GlobalWorkerOptions.workerSrc =
+    "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.worker.min.mjs";
 
-const previousPage = document.querySelector("#previous-page");
-const nextPage = document.querySelector("#next-page");
+const languages = {
+    en: {
+        title: "The Bible",
+        home: "Home",
+        pricing: "Pricing",
+        contact: "Contact",
+        page: "Page",
 
-const pageButtons = document.querySelector("#page-buttons");
+        siteName: "Apocalypse 2033",
+        onePage: "One Page",
+        allPages: "All Pages",
+        contactTitle: "Contact",
+        name: "Name",
+        email: "Email",
+        message: "Message",
+        send: "Send",
+        footer: "GitHub Pages",
+        copyright: "© 2026 All rights reserved",
 
-fetch("data/book.json")
-.then(response => response.json())
-.then(data => {
+        englishButton: "English",
+        russianButton: "Russian",
+        pdf: "books/english.pdf"
+    },
 
-    bookData = data["Alex Book"];
+    ru: {
+        title: "Библия",
+        home: "Главная",
+        pricing: "Цены",
+        contact: "Связаться с нами",
+        page: "Страница",
 
-    loadChapters();
-    loadPageButtons();
-    displayPage();
+        siteName: "Апокалипсис 2033",
+        onePage: "Одна страница",
+        allPages: "Все страницы",
+        contactTitle: "Контакты",
+        name: "Имя",
+        email: "Электронная почта",
+        message: "Сообщение",
+        send: "Отправить",
+        footer: "GitHub Pages",
+        copyright: "© 2026 Все права защищены",
 
-})
-.catch(error => {
-    console.error("Error loading book:", error);
-});
+        englishButton: "Английский",
+        russianButton: "Русский",
+        pdf: "books/russian.pdf"
+    }
+};
+
+let currentLanguage = "en";
+let currentPage = 1;
+let pdfDocument = null;
+let pageElements = [];
+
+const pdfContainer = document.getElementById("pdf-container");
+
+const bookTitle = document.getElementById("book-title");
+const siteName = document.getElementById("site-name");
+
+const contactTitle = document.getElementById("contact-title");
+const contactName = document.getElementById("contact-name");
+const contactEmail = document.getElementById("contact-email");
+const contactMessage = document.getElementById("contact-message");
+const contactSubmit = document.getElementById("contact-submit");
+
+const footerTitle = document.getElementById("footer-title");
+const copyright = document.getElementById("copyright");
+const homeButton = document.getElementById("home-button");
+const pricingButton = document.getElementById("pricing-button");
+const contactButton = document.getElementById("contact-button");
+
+const englishButton = document.getElementById("english-button");
+const russianButton = document.getElementById("russian-button");
+
+const pageLabel = document.getElementById("page-label");
+const currentPageElement = document.getElementById("current-page");
+const totalPagesElement = document.getElementById("total-pages");
+
+const previousButton = document.getElementById("previous-page");
+const nextButton = document.getElementById("next-page");
+
+const singlePageButton = document.getElementById("single-page-view");
+const allPageButton = document.getElementById("all-page-view");
+
+let viewMode = "single";
 
 
-function loadChapters() {
+async function loadPDF() {
+    const language = languages[currentLanguage];
 
-    bookData.chapters.forEach((chapter, index) => {
+    pdfContainer.innerHTML = "";
+    pageElements = [];
 
-        const option = document.createElement("option");
+    pdfDocument = await pdfjsLib.getDocument(language.pdf).promise;
 
-        option.value = index;
-        option.textContent = chapter.title;
+    currentPage = 1;
 
-        chapterSelect.appendChild(option);
-    });
-}
+    totalPagesElement.textContent = pdfDocument.numPages;
 
-
-function displayPage() {
-
-    const chapter = bookData.chapters[currentChapter];
-
-    const page = chapter.pages[currentPage];
-
-    pageContent.innerHTML = "";
-
-    page.content.forEach(line => {
-
-        const paragraph = document.createElement("p");
-
-        paragraph.textContent = line;
-
-        pageContent.appendChild(paragraph);
-    });
-
-    pageNumber.textContent = page["page-number"];
-}
-
-
-chapterSelect.addEventListener("change", function() {
-
-    currentChapter = Number(this.value);
-
-    currentPage = 0;
-
-    displayPage();
-
-});
-
-nextPage.addEventListener("click", function() {
-
-    const chapter = bookData.chapters[currentChapter];
-
-    // There is another page in this chapter
-    if (currentPage < chapter.pages.length - 1) {
-
-        currentPage++;
-
-    // We're at the end of this chapter, move to the next chapter
-    } else if (currentChapter < bookData.chapters.length - 1) {
-
-        currentChapter++;
-        currentPage = 0;
-
-        // Update dropdown
-        chapterSelect.value = currentChapter;
+    if (viewMode === "single") {
+        await renderPage(currentPage);
+    } else {
+        for (
+            let pageNumber = 1;
+            pageNumber <= pdfDocument.numPages;
+            pageNumber++
+        ) {
+            await renderPage(pageNumber);
+        }
     }
 
-    displayPage();
-});
+    updatePageDisplay();
+}
 
-previousPage.addEventListener("click", function() {
 
-    // There is a previous page in this chapter
-    if (currentPage > 0) {
+async function renderPage(pageNumber) {
+    const page = await pdfDocument.getPage(pageNumber);
 
+    if (viewMode === "single") {
+        pdfContainer.innerHTML = "";
+        pageElements = [];
+    }
+
+    const pageWrapper = document.createElement("div");
+
+    pageWrapper.className = "pdf-page";
+    pageWrapper.dataset.page = pageNumber;
+
+    const canvas = document.createElement("canvas");
+    const context = canvas.getContext("2d");
+
+    const containerWidth = pdfContainer.clientWidth;
+    const baseViewport = page.getViewport({ scale: 1 });
+
+    const availableWidth = Math.max(containerWidth - 16, 300);
+
+    const scale = Math.min(
+        availableWidth / baseViewport.width,
+        1.5
+    );
+
+    const viewport = page.getViewport({ scale });
+
+    canvas.width = viewport.width;
+    canvas.height = viewport.height;
+
+    canvas.style.width = `${viewport.width}px`;
+    canvas.style.height = `${viewport.height}px`;
+
+    pageWrapper.appendChild(canvas);
+    pdfContainer.appendChild(pageWrapper);
+
+    await page.render({
+        canvasContext: context,
+        viewport: viewport
+    }).promise;
+
+    pageElements.push(pageWrapper);
+}
+
+async function changeViewMode(mode) {
+    viewMode = mode;
+
+    pdfContainer.innerHTML = "";
+    pageElements = [];
+
+    if (viewMode === "single") {
+        await renderPage(currentPage);
+    } else {
+        for (
+            let pageNumber = 1;
+            pageNumber <= pdfDocument.numPages;
+            pageNumber++
+        ) {
+            await renderPage(pageNumber);
+        }
+    }
+
+    updatePageDisplay();
+}
+
+
+function updatePageDisplay() {
+    currentPageElement.textContent = currentPage;
+
+    previousButton.disabled = currentPage <= 1;
+    nextButton.disabled = !pdfDocument || currentPage >= pdfDocument.numPages;
+}
+
+
+function updateCurrentPageFromScroll() {
+    if (viewMode !== "all") {
+        return;
+    }
+
+    if (pageElements.length === 0) {
+        return;
+    }
+
+    const containerRect = pdfContainer.getBoundingClientRect();
+
+    let closestPage = 1;
+    let closestDistance = Infinity;
+
+    pageElements.forEach((pageElement, index) => {
+        const rect = pageElement.getBoundingClientRect();
+
+        const distance = Math.abs(
+            rect.top - containerRect.top
+        );
+
+        if (distance < closestDistance) {
+            closestDistance = distance;
+            closestPage = index + 1;
+        }
+    });
+
+    if (closestPage !== currentPage) {
+        currentPage = closestPage;
+        updatePageDisplay();
+    }
+}
+
+
+function updateLanguage() {
+    const language = languages[currentLanguage];
+
+    document.documentElement.lang = currentLanguage;
+
+    bookTitle.textContent = language.title;
+    homeButton.textContent = language.home;
+    pricingButton.textContent = language.pricing;
+    contactButton.textContent = language.contact;
+    pageLabel.textContent = language.page;
+
+    englishButton.textContent = language.englishButton;
+    russianButton.textContent = language.russianButton;
+
+    englishButton.classList.toggle("active", currentLanguage === "en");
+    russianButton.classList.toggle("active", currentLanguage === "ru");
+    siteName.textContent = language.siteName;
+
+    singlePageButton.textContent = language.onePage;
+    allPageButton.textContent = language.allPages;
+
+    contactTitle.textContent = language.contactTitle;
+
+    contactName.placeholder = language.name;
+    contactEmail.placeholder = language.email;
+    contactMessage.placeholder = language.message;
+
+    contactSubmit.textContent = language.send;
+
+    footerTitle.textContent = language.footer;
+    copyright.textContent = language.copyright;
+}
+
+
+async function changeLanguage(language) {
+    currentLanguage = language;
+
+    updateLanguage();
+
+    await loadPDF();
+}
+
+
+previousButton.addEventListener("click", async () => {
+    if (currentPage > 1) {
         currentPage--;
 
-    // We're at the beginning of this chapter, move to previous chapter
-    } else if (currentChapter > 0) {
+        if (viewMode === "single") {
+            await renderPage(currentPage);
+        } else {
+            pageElements[currentPage - 1].scrollIntoView({
+                behavior: "smooth",
+                block: "start"
+            });
+        }
 
-        currentChapter--;
-
-        const previousChapter = bookData.chapters[currentChapter];
-
-        // Go to the last page of the previous chapter
-        currentPage = previousChapter.pages.length - 1;
-
-        // Update dropdown
-        chapterSelect.value = currentChapter;
+        updatePageDisplay();
     }
-
-    displayPage();
 });
 
-function loadPageButtons() {
+pdfContainer.addEventListener("wheel", (event) => {
 
-    pageButtons.innerHTML = "";
+    if (viewMode !== "single") {
+        return;
+    }
 
-    bookData.chapters.forEach((chapter, chapterIndex) => {
+    if (event.deltaY > 0 && currentPage < pdfDocument.numPages) {
+        event.preventDefault();
 
-        chapter.pages.forEach((page, pageIndex) => {
+        currentPage++;
+        renderPage(currentPage);
+        updatePageDisplay();
+    }
 
-            const button = document.createElement("button");
+    if (event.deltaY < 0 && currentPage > 1) {
+        event.preventDefault();
 
-            button.classList.add("page-button");
+        currentPage--;
+        renderPage(currentPage);
+        updatePageDisplay();
+    }
+});
 
-            button.textContent = page["page-number"];
 
-            button.addEventListener("click", function() {
+nextButton.addEventListener("click", async () => {
+    if (
+        pdfDocument &&
+        currentPage < pdfDocument.numPages
+    ) {
+        currentPage++;
 
-                currentChapter = chapterIndex;
-                currentPage = pageIndex;
-
-                chapterSelect.value = currentChapter;
-
-                displayPage();
+        if (viewMode === "single") {
+            await renderPage(currentPage);
+        } else {
+            pageElements[currentPage - 1].scrollIntoView({
+                behavior: "smooth",
+                block: "start"
             });
+        }
 
-            pageButtons.appendChild(button);
-        });
-    });
-}
+        updatePageDisplay();
+    }
+});
+
+singlePageButton.addEventListener("click", () => {
+    changeViewMode("single");
+});
+
+allPageButton.addEventListener("click", () => {
+    changeViewMode("all");
+});
+
+
+pdfContainer.addEventListener("scroll", updateCurrentPageFromScroll);
+
+
+englishButton.addEventListener("click", () => {
+    if (currentLanguage !== "en") {
+        changeLanguage("en");
+    }
+});
+
+
+russianButton.addEventListener("click", () => {
+    if (currentLanguage !== "ru") {
+        changeLanguage("ru");
+    }
+});
+
+
+updateLanguage();
+loadPDF();
