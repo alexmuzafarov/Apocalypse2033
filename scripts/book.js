@@ -7,14 +7,14 @@ const languages = {
     en: {
         title: "The Holy Book of The Last Days",
         home: "Home",
-        pricing: "Pricing",
+        //pricing: "Pricing",
         contact: "Contact",
         page: "Page",
 
         siteName: "Apocalypse 2033",
         onePage: "One Page",
         allPages: "All Pages",
-        contactTitle: "Contact",
+        contactTitle: "Contact (WIP)",
         name: "Name",
         email: "Email",
         message: "Message",
@@ -30,14 +30,14 @@ const languages = {
     ru: {
         title: "Священная книга последних дней",
         home: "Главная",
-        pricing: "Цены",
+        //pricing: "Цены",
         contact: "Связаться с нами",
         page: "Страница",
 
         siteName: "Апокалипсис 2033",
         onePage: "Одна страница",
         allPages: "Все страницы",
-        contactTitle: "Контакты",
+        contactTitle: "Контакты (WIP)",
         name: "Имя",
         email: "Электронная почта",
         message: "Сообщение",
@@ -70,7 +70,7 @@ const contactSubmit = document.getElementById("contact-submit");
 const footerTitle = document.getElementById("footer-title");
 const copyright = document.getElementById("copyright");
 const homeButton = document.getElementById("home-button");
-const pricingButton = document.getElementById("pricing-button");
+// const pricingButton = document.getElementById("pricing-button");
 const contactButton = document.getElementById("contact-button");
 
 const englishButton = document.getElementById("english-button");
@@ -87,70 +87,156 @@ const singlePageButton = document.getElementById("single-page-view");
 const allPageButton = document.getElementById("all-page-view");
 
 let viewMode = "single";
+let renderSession = 0;
+let pdfLoadSession = 0;
+let pdfLoading = false;
 
+// --------------------------------------------------
+// LOAD PDF
+// --------------------------------------------------
 
 async function loadPDF() {
+    const loadSession = ++pdfLoadSession;
+    pdfLoading = true;
+    const session = ++renderSession;
     const language = languages[currentLanguage];
 
-    pdfContainer.innerHTML = "";
-    pageElements = [];
+    // Remember the page we were viewing
+    const savedPage = currentPage;
+
+    let newPDF;
 
     try {
-        const pdfPath = new URL(language.pdf, window.location.href).href;
-        pdfDocument = await pdfjsLib.getDocument(pdfPath).promise;
+        const pdfPath = new URL(
+            language.pdf,
+            window.location.href
+        ).href;
+
+        newPDF = await pdfjsLib.getDocument(pdfPath).promise;
     } catch (error) {
+        // A newer language load happened while loading
+        if (loadSession !== pdfLoadSession) {
+            return;
+        }
+
         console.error("PDF failed to load:", language.pdf);
         console.error(error);
         return;
     }
 
-    currentPage = 1;
-
-    totalPagesElement.textContent = pdfDocument.numPages;
-
-    if (viewMode === "single") {
-        await renderPage(currentPage);
-    } else {
-        for (
-            let pageNumber = 1;
-            pageNumber <= pdfDocument.numPages;
-            pageNumber++
-        ) {
-            await renderPage(pageNumber);
-        }
+    // A newer language/view change happened while loading
+    if (loadSession !== pdfLoadSession) {
+        return;
     }
 
-    updatePageDisplay();
+    pdfDocument = newPDF;
+    pdfLoading = false;
+
+    // Keep the same page number if possible
+    currentPage = Math.min(
+        savedPage,
+        pdfDocument.numPages
+    );
+
+    totalPagesElement.textContent =
+        pdfDocument.numPages;
+
+    // Build the new viewer
+    pdfContainer.innerHTML = "";
+    pageElements = [];
+
+    if (viewMode === "single") {
+        await renderPage(
+            currentPage,
+            null,
+            session,
+            "single"
+        );
+
+        if (session !== renderSession) {
+            return;
+        }
+
+        updatePageDisplay();
+        return;
+    }
+
+    // ALL PAGE MODE
+    await buildAllPages(
+        currentPage,
+        session
+    );
 }
 
 
-async function renderPage(pageNumber) {
-    const page = await pdfDocument.getPage(pageNumber);
+// --------------------------------------------------
+// RENDER ONE PAGE
+// --------------------------------------------------
 
-    if (viewMode === "single") {
-        pdfContainer.innerHTML = "";
-        pageElements = [];
+async function renderPage(
+    pageNumber,
+    pageWrapper = null,
+    session = renderSession,
+    mode = viewMode
+) {
+    // Don't start an outdated render
+    if (session !== renderSession) {
+        return false;
     }
 
-    const pageWrapper = document.createElement("div");
+    const page = await pdfDocument.getPage(pageNumber);
 
-    pageWrapper.className = "pdf-page";
-    pageWrapper.dataset.page = pageNumber;
+    // Check again after the async operation
+    if (session !== renderSession) {
+        return false;
+    }
+
+    // Single Page mode gets one page only
+    if (mode === "single") {
+        pdfContainer.innerHTML = "";
+        pageElements = [];
+
+        pageWrapper = document.createElement("div");
+
+        pageWrapper.className = "pdf-page";
+        pageWrapper.dataset.page = pageNumber;
+
+        pdfContainer.appendChild(pageWrapper);
+        pageElements.push(pageWrapper);
+    }
+
+    // All Pages mode uses the placeholder that was already created
+    if (!pageWrapper) {
+        pageWrapper = document.createElement("div");
+
+        pageWrapper.className = "pdf-page";
+        pageWrapper.dataset.page = pageNumber;
+
+        pdfContainer.appendChild(pageWrapper);
+    }
 
     const canvas = document.createElement("canvas");
     const context = canvas.getContext("2d");
 
     const containerWidth = pdfContainer.clientWidth;
-    const baseViewport = page.getViewport({ scale: 1 });
 
-    const availableWidth = Math.max(containerWidth - 16, 300);
+    const baseViewport = page.getViewport({
+        scale: 1
+    });
+
+    const availableWidth = Math.max(
+        containerWidth - 16,
+        300
+    );
 
     const scale = Math.min(
         availableWidth / baseViewport.width,
         1.5
     );
 
-    const viewport = page.getViewport({ scale });
+    const viewport = page.getViewport({
+        scale
+    });
 
     canvas.width = viewport.width;
     canvas.height = viewport.height;
@@ -159,45 +245,220 @@ async function renderPage(pageNumber) {
     canvas.style.height = `${viewport.height}px`;
 
     pageWrapper.appendChild(canvas);
-    pdfContainer.appendChild(pageWrapper);
 
     await page.render({
         canvasContext: context,
         viewport: viewport
     }).promise;
 
-    pageElements.push(pageWrapper);
+    // Make sure this render is still current
+    if (session !== renderSession) {
+        return false;
+    }
+
+    return true;
 }
 
-async function changeViewMode(mode) {
-    viewMode = mode;
 
-    pdfContainer.innerHTML = "";
+// --------------------------------------------------
+// BUILD ALL-PAGE VIEW
+// --------------------------------------------------
+
+async function buildAllPages(
+    savedPage,
+    session
+) {
     pageElements = [];
 
-    if (viewMode === "single") {
-        await renderPage(currentPage);
-    } else {
-        for (
-            let pageNumber = 1;
-            pageNumber <= pdfDocument.numPages;
-            pageNumber++
-        ) {
-            await renderPage(pageNumber);
+    // Create all placeholders immediately
+    for (
+        let pageNumber = 1;
+        pageNumber <= pdfDocument.numPages;
+        pageNumber++
+    ) {
+        const pageWrapper =
+            document.createElement("div");
+
+        pageWrapper.className = "pdf-page";
+        pageWrapper.dataset.page = pageNumber;
+
+        pdfContainer.appendChild(pageWrapper);
+
+        pageElements.push(pageWrapper);
+    }
+
+    // Render the page the user was already on FIRST
+    const savedWrapper =
+        pageElements[savedPage - 1];
+
+    if (savedWrapper) {
+        await renderPage(
+            savedPage,
+            savedWrapper,
+            session,
+            "all"
+        );
+    }
+
+    // The user may have changed language/view
+    if (session !== renderSession) {
+        return;
+    }
+
+    currentPage = savedPage;
+    updatePageDisplay();
+
+    // Jump to the saved page
+    requestAnimationFrame(() => {
+        if (session !== renderSession) {
+            return;
+        }
+
+        const page =
+            pageElements[savedPage - 1];
+
+        if (page) {
+            pdfContainer.scrollTop =
+                page.offsetTop -
+                pdfContainer.offsetTop;
+        }
+    });
+
+    // Load everything else in the background
+    for (
+        let pageNumber = 1;
+        pageNumber <= pdfDocument.numPages;
+        pageNumber++
+    ) {
+        if (session !== renderSession) {
+            return;
+        }
+
+        if (pageNumber === savedPage) {
+            continue;
+        }
+
+        await renderPage(
+            pageNumber,
+            pageElements[pageNumber - 1],
+            session,
+            "all"
+        );
+
+        if (session !== renderSession) {
+            return;
         }
     }
 
-    updatePageDisplay();
+    // Finished loading
+    if (session === renderSession) {
+        currentPage = savedPage;
+        updatePageDisplay();
+
+        pdfContainer.addEventListener(
+            "scroll",
+            updateCurrentPageFromScroll
+        );
+    }
 }
 
+
+// --------------------------------------------------
+// CHANGE VIEW MODE
+// --------------------------------------------------
+
+async function changeViewMode(mode) {
+    const session = ++renderSession;
+
+    // Save the page BEFORE changing anything
+    const savedPage = currentPage;
+
+    viewMode = mode;
+
+    pdfContainer.classList.toggle(
+        "all-pages",
+        viewMode === "all"
+    );
+
+    // Stop scroll tracking while rebuilding
+    pdfContainer.removeEventListener(
+        "scroll",
+        updateCurrentPageFromScroll
+    );
+
+    // If switching to single page,
+    // immediately clear the old all-page viewer
+    if (viewMode === "single") {
+        pdfContainer.innerHTML = "";
+        pageElements = [];
+
+        currentPage = Math.min(
+            savedPage,
+            pdfDocument.numPages
+        );
+
+        // Render the saved page
+        await renderPage(
+            currentPage,
+            null,
+            session,
+            "single"
+        );
+
+        if (session !== renderSession) {
+            return;
+        }
+
+        updatePageDisplay();
+        return;
+    }
+
+    // Switching to all pages
+    pdfContainer.innerHTML = "";
+    pageElements = [];
+
+    currentPage = Math.min(
+        savedPage,
+        pdfDocument.numPages
+    );
+
+    await buildAllPages(
+        currentPage,
+        session
+    );
+}
+
+
+// --------------------------------------------------
+// PAGE DISPLAY
+// --------------------------------------------------
 
 function updatePageDisplay() {
-    currentPageElement.textContent = currentPage;
+    currentPageElement.textContent =
+        currentPage;
 
-    previousButton.disabled = currentPage <= 1;
-    nextButton.disabled = !pdfDocument || currentPage >= pdfDocument.numPages;
+    previousButton.disabled =
+        currentPage <= 1;
+
+    nextButton.disabled =
+        !pdfDocument ||
+        currentPage >= pdfDocument.numPages;
+
+    singlePageButton.classList.toggle(
+        "active",
+        viewMode === "single"
+    );
+
+    allPageButton.classList.toggle(
+        "active",
+        viewMode === "all"
+    );
 }
 
+
+// --------------------------------------------------
+// DETERMINE CURRENT PAGE WHILE SCROLLING
+// --------------------------------------------------
 
 function updateCurrentPageFromScroll() {
     if (viewMode !== "all") {
@@ -240,7 +501,7 @@ function updateLanguage() {
 
     bookTitle.textContent = language.title;
     homeButton.textContent = language.home;
-    pricingButton.textContent = language.pricing;
+    //pricingButton.textContent = language.pricing;
     contactButton.textContent = language.contact;
     pageLabel.textContent = language.page;
 
@@ -277,60 +538,136 @@ async function changeLanguage(language) {
 
 
 previousButton.addEventListener("click", async () => {
-    if (currentPage > 1) {
+    if (!pdfLoading && currentPage > 1) {
         currentPage--;
 
         if (viewMode === "single") {
-            await renderPage(currentPage);
+            const session = ++renderSession;
+
+            await renderPage(
+                currentPage,
+                null,
+                session,
+                "single"
+            );
         } else {
-            pageElements[currentPage - 1].scrollIntoView({
-                behavior: "smooth",
-                block: "start"
-            });
+            const page = pageElements[currentPage - 1];
+
+            if (page) {
+                requestAnimationFrame(() => {
+                    pdfContainer.scrollTop =
+                        page.offsetTop - pdfContainer.offsetTop;
+                });
+            }
         }
 
         updatePageDisplay();
     }
 });
 
-pdfContainer.addEventListener("wheel", (event) => {
-
-    if (viewMode !== "single") {
+pdfContainer.addEventListener("wheel", async (event) => {
+    if (viewMode !== "single" || !pdfDocument) {
         return;
     }
 
-    if (event.deltaY > 0 && currentPage < pdfDocument.numPages) {
-        event.preventDefault();
+    const atTop =
+        pdfContainer.scrollTop <= 0;
 
-        currentPage++;
-        renderPage(currentPage);
-        updatePageDisplay();
+    const atBottom =
+        pdfContainer.scrollTop +
+        pdfContainer.clientHeight >=
+        pdfContainer.scrollHeight - 2;
+
+    // Scroll down
+    if (event.deltaY > 0) {
+
+        // Still room to scroll down this page
+        if (!atBottom) {
+            return;
+        }
+
+        // At the bottom, go to next page
+        if (currentPage < pdfDocument.numPages) {
+            event.preventDefault();
+
+            currentPage++;
+
+            const session = ++renderSession;
+
+            await renderPage(
+                currentPage,
+                null,
+                session,
+                "single"
+            );
+
+            if (session === renderSession) {
+                pdfContainer.scrollTop = 0;
+                updatePageDisplay();
+            }
+        }
     }
 
-    if (event.deltaY < 0 && currentPage > 1) {
-        event.preventDefault();
+    // Scroll up
+    if (event.deltaY < 0) {
 
-        currentPage--;
-        renderPage(currentPage);
-        updatePageDisplay();
+        // Still room to scroll up this page
+        if (!atTop) {
+            return;
+        }
+
+        // At the top, go to previous page
+        if (currentPage > 1) {
+            event.preventDefault();
+
+            currentPage--;
+
+            const session = ++renderSession;
+
+            await renderPage(
+                currentPage,
+                null,
+                session,
+                "single"
+            );
+
+            if (session === renderSession) {
+                pdfContainer.scrollTop =
+                    pdfContainer.scrollHeight;
+
+                updatePageDisplay();
+            }
+        }
     }
 });
 
 
 nextButton.addEventListener("click", async () => {
     if (
+        !pdfLoading &&
         pdfDocument &&
         currentPage < pdfDocument.numPages
     ) {
         currentPage++;
 
         if (viewMode === "single") {
-            await renderPage(currentPage);
+            const session = ++renderSession;
+
+            await renderPage(
+                currentPage,
+                null,
+                session,
+                "single"
+            );
         } else {
-            pageElements[currentPage - 1].scrollIntoView({
-                behavior: "smooth",
-                block: "start"
-            });
+            const page = pageElements[currentPage - 1];
+
+            if (page) {
+                pdfContainer.scrollTo({
+                    top: page.offsetTop - pdfContainer.offsetTop,
+                    behavior: "smooth"
+                });
+            }
         }
 
         updatePageDisplay();
@@ -360,6 +697,44 @@ russianButton.addEventListener("click", () => {
     if (currentLanguage !== "ru") {
         changeLanguage("ru");
     }
+});
+
+
+singlePageButton.addEventListener("click", () => {
+    changeViewMode("single");
+});
+
+allPageButton.addEventListener("click", () => {
+    changeViewMode("all");
+});
+
+pdfContainer.addEventListener("scroll", updateCurrentPageFromScroll);
+
+englishButton.addEventListener("click", () => {
+    if (currentLanguage !== "en") {
+        changeLanguage("en");
+    }
+});
+
+russianButton.addEventListener("click", () => {
+    if (currentLanguage !== "ru") {
+        changeLanguage("ru");
+    }
+});
+
+
+homeButton.addEventListener("click", () => {
+    window.scrollTo({
+        top: 0,
+        behavior: "smooth"
+    });
+});
+
+contactButton.addEventListener("click", () => {
+    window.scrollTo({
+        top: document.documentElement.scrollHeight,
+        behavior: "smooth"
+    });
 });
 
 
