@@ -96,7 +96,8 @@ async function loadPDF() {
     pageElements = [];
 
     try {
-        pdfDocument = await pdfjsLib.getDocument(language.pdf).promise;
+        const pdfPath = new URL(language.pdf, window.location.href).href;
+        pdfDocument = await pdfjsLib.getDocument(pdfPath).promise;
     } catch (error) {
         console.error("PDF failed to load:", language.pdf);
         console.error(error);
