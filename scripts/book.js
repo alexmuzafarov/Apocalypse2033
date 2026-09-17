@@ -229,10 +229,7 @@ async function renderPage(
         300
     );
 
-    const scale = Math.min(
-        availableWidth / baseViewport.width,
-        1.5
-    );
+    const scale = availableWidth / baseViewport.width;
 
     const viewport = page.getViewport({
         scale
