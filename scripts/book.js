@@ -95,7 +95,13 @@ async function loadPDF() {
     pdfContainer.innerHTML = "";
     pageElements = [];
 
-    pdfDocument = await pdfjsLib.getDocument(language.pdf).promise;
+    try {
+        pdfDocument = await pdfjsLib.getDocument(language.pdf).promise;
+    } catch (error) {
+        console.error("PDF failed to load:", language.pdf);
+        console.error(error);
+        return;
+    }
 
     currentPage = 1;
 
