@@ -5,7 +5,7 @@ pdfjsLib.GlobalWorkerOptions.workerSrc =
 
 const languages = {
     en: {
-        title: "The Bible",
+        title: "The Holy Book of The Last Days",
         home: "Home",
         pricing: "Pricing",
         contact: "Contact",
@@ -19,7 +19,7 @@ const languages = {
         email: "Email",
         message: "Message",
         send: "Send",
-        footer: "GitHub Pages",
+        footer: "GitHub Pages v1.0",
         copyright: "© 2026 All rights reserved",
 
         englishButton: "English",
@@ -28,7 +28,7 @@ const languages = {
     },
 
     ru: {
-        title: "Библия",
+        title: "Священная книга последних дней",
         home: "Главная",
         pricing: "Цены",
         contact: "Связаться с нами",
@@ -42,7 +42,7 @@ const languages = {
         email: "Электронная почта",
         message: "Сообщение",
         send: "Отправить",
-        footer: "GitHub Pages",
+        footer: "GitHub Pages v1.0",
         copyright: "© 2026 Все права защищены",
 
         englishButton: "Английский",
