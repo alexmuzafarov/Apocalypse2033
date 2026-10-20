@@ -1,5 +1,11 @@
+html {
+    font-size: 100%;
+}
+
 body {
     margin: 0;
+    font-size: 1rem;
+    line-height: 1.5;
 }
 
 /* header */
@@ -18,6 +24,8 @@ header {
     position: sticky;
     top: 0;
     z-index: 1000;
+
+    flex-wrap: wrap;
 }
 
 .header-left {
@@ -40,6 +48,7 @@ header {
     justify-content: flex-end;
     gap: 8px;
     flex: 0 1 auto;
+    flex-wrap: wrap;
     min-width: 0;
 }
 
@@ -64,7 +73,7 @@ header img {
     padding: 7px 6px;
     font-size: clamp(6px, 2.5vw, 12px);
     white-space: nowrap;
-    overflow: hidden;
+    overflow: visible;
     text-overflow: clip;
 }
 
@@ -89,7 +98,7 @@ header img {
     font-size: 14px;
     text-align: center;
     white-space: nowrap;
-    overflow: hidden;
+    overflow: overflow;
 }
 
 .language-button::before {
@@ -400,7 +409,8 @@ header img {
     background-color: lightgray;
     color: black;
     border-radius: 6px;
-    height: 44px;
+    height: auto;
+    min-height: 2.75rem;;
     min-width: 90px;
     padding: 0 10px;
     box-sizing: border-box;
@@ -504,7 +514,7 @@ header img {
 }
 
 .page-content {
-    line-height: 1;
+    line-height: 1.5;
 }
 
 .page-controls {
@@ -616,6 +626,7 @@ header img {
 
     .pdf-toolbar {
         gap: 8px;
+        flex-wrap: wrap;
     }
 
     .pdf-container {
