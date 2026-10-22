@@ -112,7 +112,10 @@ async function loadPDF() {
             window.location.href
         ).href;
 
-        newPDF = await pdfjsLib.getDocument(pdfPath).promise;
+        newPDF = await pdfjsLib.getDocument({
+            url: pdfPath,
+            isEvalSupported: false
+        }).promise;
     } catch (error) {
         // A newer language load happened while loading
         if (loadSession !== pdfLoadSession) {
@@ -358,11 +361,6 @@ async function buildAllPages(
     if (session === renderSession) {
         currentPage = savedPage;
         updatePageDisplay();
-
-        pdfContainer.addEventListener(
-            "scroll",
-            updateCurrentPageFromScroll
-        );
     }
 }
 
@@ -870,30 +868,6 @@ russianButton.addEventListener("click", () => {
         changeLanguage("ru");
     }
 });
-
-
-singlePageButton.addEventListener("click", () => {
-    changeViewMode("single");
-});
-
-allPageButton.addEventListener("click", () => {
-    changeViewMode("all");
-});
-
-pdfContainer.addEventListener("scroll", updateCurrentPageFromScroll);
-
-englishButton.addEventListener("click", () => {
-    if (currentLanguage !== "en") {
-        changeLanguage("en");
-    }
-});
-
-russianButton.addEventListener("click", () => {
-    if (currentLanguage !== "ru") {
-        changeLanguage("ru");
-    }
-});
-
 
 homeButton.addEventListener("click", () => {
     window.scrollTo({
