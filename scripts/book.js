@@ -688,7 +688,7 @@ pdfContainer.addEventListener("wheel", async (event) => {
 
 let touchStartY = 0;
 
-const MIN_SWIPE_DISTANCE = 60;
+const MIN_SWIPE_DISTANCE = 2;
 
 pdfContainer.addEventListener("touchstart", (event) => {
     if (viewMode !== "single") {
@@ -702,24 +702,14 @@ pdfContainer.addEventListener("touchstart", (event) => {
 pdfContainer.addEventListener("touchend", async (event) => {
     if (
         viewMode !== "single" ||
-        !pdfDocument ||
-        pageTurnLocked
+        !pdfDocument
     ) {
         return;
     }
 
     const touchEndY = event.changedTouches[0].clientY;
 
-    /*
-      Positive = finger moved upward = user is scrolling down.
-      Negative = finger moved downward = user is scrolling up.
-    */
     const swipeDistance = touchStartY - touchEndY;
-
-    // Ignore taps and very small accidental movements.
-    if (Math.abs(swipeDistance) < MIN_SWIPE_DISTANCE) {
-        return;
-    }
 
     const atTop =
         pdfContainer.scrollTop <= PAGE_EDGE_BUFFER;
@@ -729,7 +719,10 @@ pdfContainer.addEventListener("touchend", async (event) => {
         pdfContainer.clientHeight >=
         pdfContainer.scrollHeight - PAGE_EDGE_BUFFER;
 
-    // Moving through the page re-arms future edge page turns.
+    /*
+      Re-arm page changes whenever the user has moved
+      away from either edge, even during the cooldown.
+    */
     if (!atTop) {
         previousPageArmed = true;
     }
@@ -738,11 +731,20 @@ pdfContainer.addEventListener("touchend", async (event) => {
         nextPageArmed = true;
     }
 
+    /*
+      Do not turn a page during cooldown or from a tiny swipe,
+      but allow the re-arm logic above to run first.
+    */
+    if (
+        pageTurnLocked ||
+        Math.abs(swipeDistance) < MIN_SWIPE_DISTANCE
+    ) {
+        return;
+    }
     // Swipe upward at the bottom: next PDF page.
     if (
         swipeDistance > 0 &&
         atBottom &&
-        nextPageArmed &&
         currentPage < pdfDocument.numPages
     ) {
         pageTurnLocked = true;
@@ -778,7 +780,6 @@ pdfContainer.addEventListener("touchend", async (event) => {
     if (
         swipeDistance < 0 &&
         atTop &&
-        previousPageArmed &&
         currentPage > 1
     ) {
         pageTurnLocked = true;
