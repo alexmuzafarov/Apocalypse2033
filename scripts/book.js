@@ -688,6 +688,131 @@ pdfContainer.addEventListener("wheel", async (event) => {
     }
 }, { passive: false });
 
+let touchStartY = 0;
+
+const MIN_SWIPE_DISTANCE = 60;
+
+pdfContainer.addEventListener("touchstart", (event) => {
+    if (viewMode !== "single") {
+        return;
+    }
+
+    touchStartY = event.touches[0].clientY;
+}, { passive: true });
+
+
+pdfContainer.addEventListener("touchend", async (event) => {
+    if (
+        viewMode !== "single" ||
+        !pdfDocument ||
+        pageTurnLocked
+    ) {
+        return;
+    }
+
+    const touchEndY = event.changedTouches[0].clientY;
+
+    /*
+      Positive = finger moved upward = user is scrolling down.
+      Negative = finger moved downward = user is scrolling up.
+    */
+    const swipeDistance = touchStartY - touchEndY;
+
+    // Ignore taps and very small accidental movements.
+    if (Math.abs(swipeDistance) < MIN_SWIPE_DISTANCE) {
+        return;
+    }
+
+    const atTop =
+        pdfContainer.scrollTop <= PAGE_EDGE_BUFFER;
+
+    const atBottom =
+        pdfContainer.scrollTop +
+        pdfContainer.clientHeight >=
+        pdfContainer.scrollHeight - PAGE_EDGE_BUFFER;
+
+    // Moving through the page re-arms future edge page turns.
+    if (!atTop) {
+        previousPageArmed = true;
+    }
+
+    if (!atBottom) {
+        nextPageArmed = true;
+    }
+
+    // Swipe upward at the bottom: next PDF page.
+    if (
+        swipeDistance > 0 &&
+        atBottom &&
+        nextPageArmed &&
+        currentPage < pdfDocument.numPages
+    ) {
+        pageTurnLocked = true;
+        nextPageArmed = false;
+        previousPageArmed = false;
+
+        currentPage++;
+
+        const session = ++renderSession;
+
+        try {
+            await renderPage(
+                currentPage,
+                null,
+                session,
+                "single"
+            );
+
+            if (session === renderSession) {
+                pdfContainer.scrollTop = 0;
+                updatePageDisplay();
+            }
+        } finally {
+            window.setTimeout(() => {
+                pageTurnLocked = false;
+            }, PAGE_TURN_COOLDOWN);
+        }
+
+        return;
+    }
+
+    // Swipe downward at the top: previous PDF page.
+    if (
+        swipeDistance < 0 &&
+        atTop &&
+        previousPageArmed &&
+        currentPage > 1
+    ) {
+        pageTurnLocked = true;
+        nextPageArmed = false;
+        previousPageArmed = false;
+
+        currentPage--;
+
+        const session = ++renderSession;
+
+        try {
+            await renderPage(
+                currentPage,
+                null,
+                session,
+                "single"
+            );
+
+            if (session === renderSession) {
+                pdfContainer.scrollTop =
+                    pdfContainer.scrollHeight;
+
+                updatePageDisplay();
+            }
+        } finally {
+            window.setTimeout(() => {
+                pageTurnLocked = false;
+            }, PAGE_TURN_COOLDOWN);
+        }
+    }
+}, { passive: true });
+
 
 nextButton.addEventListener("click", async () => {
     if (
