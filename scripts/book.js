@@ -569,35 +569,66 @@ previousButton.addEventListener("click", async () => {
     }
 });
 
+const PAGE_EDGE_BUFFER = 24;
+const PAGE_TURN_COOLDOWN = 500;
+let pageTurnLocked = false;
+let nextPageArmed = true;
+let previousPageArmed = true;
+
 pdfContainer.addEventListener("wheel", async (event) => {
     if (viewMode !== "single" || !pdfDocument) {
         return;
     }
 
     const atTop =
-        pdfContainer.scrollTop <= 0;
+        pdfContainer.scrollTop <= PAGE_EDGE_BUFFER;
 
     const atBottom =
         pdfContainer.scrollTop +
         pdfContainer.clientHeight >=
-        pdfContainer.scrollHeight - 2;
+        pdfContainer.scrollHeight - PAGE_EDGE_BUFFER;
 
-    // Scroll down
-    if (event.deltaY > 0) {
+    // The user moved away from an edge, so allow a future
+    // page turn from that edge.
+    if (!atTop) {
+        previousPageArmed = true;
+    }
 
-        // Still room to scroll down this page
-        if (!atBottom) {
-            return;
+    if (!atBottom) {
+        nextPageArmed = true;
+    }
+
+    // Do not accept more wheel page-turns while rendering,
+    // or immediately after a page was changed.
+    if (pageTurnLocked) {
+        if (
+            (event.deltaY > 0 && atBottom) ||
+            (event.deltaY < 0 && atTop)
+        ) {
+            event.preventDefault();
         }
 
-        // At the bottom, go to next page
-        if (currentPage < pdfDocument.numPages) {
-            event.preventDefault();
+        return;
+    }
 
-            currentPage++;
+    // Scroll down: move to the next PDF page only at bottom.
+    if (
+        event.deltaY > 0 &&
+        atBottom &&
+        nextPageArmed &&
+        currentPage < pdfDocument.numPages
+    ) {
+        event.preventDefault();
 
-            const session = ++renderSession;
+        pageTurnLocked = true;
+        nextPageArmed = false;
+        previousPageArmed = false;
 
+        currentPage++;
+
+        const session = ++renderSession;
+
+        try {
             await renderPage(
                 currentPage,
                 null,
@@ -609,25 +640,33 @@ pdfContainer.addEventListener("wheel", async (event) => {
                 pdfContainer.scrollTop = 0;
                 updatePageDisplay();
             }
+        } finally {
+            window.setTimeout(() => {
+                pageTurnLocked = false;
+            }, PAGE_TURN_COOLDOWN);
         }
+
+        return;
     }
 
-    // Scroll up
-    if (event.deltaY < 0) {
+    // Scroll up: move to the previous PDF page only at top.
+    if (
+        event.deltaY < 0 &&
+        atTop &&
+        previousPageArmed &&
+        currentPage > 1
+    ) {
+        event.preventDefault();
 
-        // Still room to scroll up this page
-        if (!atTop) {
-            return;
-        }
+        pageTurnLocked = true;
+        nextPageArmed = false;
+        previousPageArmed = false;
 
-        // At the top, go to previous page
-        if (currentPage > 1) {
-            event.preventDefault();
+        currentPage--;
 
-            currentPage--;
+        const session = ++renderSession;
 
-            const session = ++renderSession;
-
+        try {
             await renderPage(
                 currentPage,
                 null,
@@ -641,9 +680,13 @@ pdfContainer.addEventListener("wheel", async (event) => {
 
                 updatePageDisplay();
             }
+        } finally {
+            window.setTimeout(() => {
+                pageTurnLocked = false;
+            }, PAGE_TURN_COOLDOWN);
         }
     }
-});
+}, { passive: false });
 
 
 nextButton.addEventListener("click", async () => {

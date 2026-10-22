@@ -351,9 +351,10 @@ header img {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 20px;
+    gap: clamp(2px, 0.8vw, 12px);
     padding: 10px;
     background-color: #444;
+    flex-wrap: nowrap;
 }
 
 .pdf-toolbar button {
@@ -620,13 +621,13 @@ header img {
     }
 
     .pdf-reader {
-        width: calc(100% - 40px);
+        width: 100%;
         margin: 0 auto;
     }
 
     .pdf-toolbar {
-        gap: 8px;
-        flex-wrap: wrap;
+        gap: clamp(2px, 0.8vw, 8px);
+        flex-wrap: nowrap;
     }
 
     .pdf-container {
@@ -638,9 +639,9 @@ header img {
 
     #single-page-view,
     #all-page-view {
-        flex: 0 1 auto;
+        flex: 0 0 auto;
         min-width: 0;
-        padding: 6px 8px;
+        padding: 6px 5px;
         font-size: clamp(8px, 2.5vw, 14px);
         line-height: 1.1;
         white-space: normal;
@@ -706,33 +707,36 @@ header img {
     }
 
     .pdf-toolbar {
-        gap: 5px;
-        padding: 8px 5px;
+        gap: 2px;
+        padding: 8px 4px;
+        flex-wrap: nowrap;
     }
 
     #single-page-view,
     #all-page-view {
-        flex: 0 1 auto;
+        flex: 0 0 auto;
         min-width: 0;
-        padding: 6px 7px;
+        padding: 5px 3px;
         font-size: clamp(7px, 2.8vw, 12px);
         line-height: 1.1;
-        white-space: normal;
+        white-space: nowrap;
         overflow: visible;
         color: black;
         text-align: center;
     }
 
     .pdf-toolbar button {
-        width: 38px;
-        height: 38px;
-        font-size: 14px;
+        width: 34px;
+        height: 34px;
+        font-size: 13px;
     }
 
     .page-info {
-        min-width: 65px;
-        height: 38px;
-        font-size: 11px;
+        min-width: 58px;
+        height: 34px;
+        font-size: 10px;
+        padding: 0 4px;
+        white-space: nowrap;
     }
 
     .contact {
